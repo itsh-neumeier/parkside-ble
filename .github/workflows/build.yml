@@ -1,0 +1,94 @@
+name: Build PARKSIDE BLE Diagnostics
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary: parkside-ble-diagnostics.exe
+            artifact: parkside-ble-diagnostics-windows-x64
+          - name: Linux x64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary: parkside-ble-diagnostics
+            artifact: parkside-ble-diagnostics-linux-x64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Linux BLE dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pkg-config libdbus-1-dev libudev-dev bluez
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+          components: rustfmt, clippy
+
+      - name: Fetch dependencies
+        run: cargo fetch --locked
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets --target ${{ matrix.target }} -- -D warnings
+
+      - name: Tests
+        run: cargo test --target ${{ matrix.target }} --locked
+
+      - name: Release build
+        run: cargo build --release --locked --target ${{ matrix.target }}
+
+      - name: Prepare package
+        shell: pwsh
+        run: |
+          $package = "dist/${{ matrix.artifact }}"
+          New-Item -ItemType Directory -Force -Path $package | Out-Null
+          Copy-Item "target/${{ matrix.target }}/release/${{ matrix.binary }}" $package
+          Copy-Item README.md, CHANGELOG.md, LICENSE $package
+          if ("${{ runner.os }}" -eq "Windows") {
+            Copy-Item Start-Parkside.bat, Start-Parkside.ps1 $package
+          }
+
+      - name: Archive Windows package
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "dist/${{ matrix.artifact }}/*" -DestinationPath "dist/${{ matrix.artifact }}.zip" -Force
+
+      - name: Archive Linux package
+        if: runner.os == 'Linux'
+        run: |
+          tar -C "dist/${{ matrix.artifact }}" -czf "dist/${{ matrix.artifact }}.tar.gz" .
+
+      - name: Upload Windows artifact
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: parkside-ble-diagnostics-windows-x64
+          path: dist/parkside-ble-diagnostics-windows-x64.zip
+
+      - name: Upload Linux artifact
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: parkside-ble-diagnostics-linux-x64
+          path: dist/parkside-ble-diagnostics-linux-x64.tar.gz
