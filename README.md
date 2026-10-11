@@ -122,6 +122,12 @@ parkside-ble-diagnostics report --input "logs\akku-01.jsonl"
 
 ## PARKSIDE- und Tuya-Hinweise
 
+Ein Windows-Praxisscan fand drei vom Benutzer als PARKSIDE-Akkus identifizierte
+Geraete mit dem Namen `TY`. Dieser Name wird als schwacher `tuya-ble`-Kandidat
+markiert. Er beweist weder Hersteller noch Protokollversion oder Akkukapazitaet.
+Die GATT-Diagnose muss die UUID-Merkmale pruefen; MAC-Adressen werden nicht als
+Herstellernachweis verwendet.
+
 Bekannte oeffentliche Hinweise auf PARKSIDE-Smart-Akkus zeigen moegliche Tuya-BLE-Merkmale:
 
 - GATT-Service `0x1910`

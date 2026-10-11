@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Geraetename `TY` als schwacher Tuya-Kandidat nach einem PARKSIDE-Praxisscan; keine bestaetigte Protokoll- oder Herstellererkennung.
+
 ## 0.1.0 - 2026-10-11
 
 - Erstes diagnostisches CLI fuer BLE-Adapterliste, BLE-Scan, GATT-Inspection und JSONL-Protokolle.

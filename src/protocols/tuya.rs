@@ -18,6 +18,20 @@ pub fn tuya_write_uuid() -> Uuid {
     ble_uuid_from_u16(TUYA_WRITE_SHORT)
 }
 
+pub fn detect_from_name(name: Option<&str>) -> Option<ProtocolMatch> {
+    let name = name?;
+    name.trim()
+        .eq_ignore_ascii_case("TY")
+        .then(|| ProtocolMatch {
+            protocol: "tuya-ble".to_string(),
+            confidence: "candidate".to_string(),
+            evidence: vec![
+                "Geraetename TY: schwacher Hinweis aus PARKSIDE-Scan; GATT-Pruefung erforderlich"
+                    .to_string(),
+            ],
+        })
+}
+
 pub fn detect_from_services(
     service_uuids: &[Uuid],
     characteristic_uuids: &[Uuid],
